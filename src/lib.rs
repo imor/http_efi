@@ -135,18 +135,18 @@ impl<W: Write> BufWriter<W> {
 impl<W: Write> Write for BufWriter<W> {
     fn write(&mut self, buf: &[u8]) -> Result<usize> { // TODO: we need to create more failure types than just EfiError
         let mut next_read_pos = 0;
-        let mut remaining = buf.len();
-        while remaining > 0 {
+        let mut yet_to_write = buf.len();
+        while yet_to_write > 0 {
             let mut available_space = self.buf.len() - self.next_write_pos;
             if available_space == 0 {
                 self.flush()?;
                 available_space = self.buf.len() - self.next_write_pos;
             }
 
-            let write_size = cmp::min(remaining, available_space);
+            let write_size = cmp::min(yet_to_write, available_space);
             self.buf[self.next_write_pos..(self.next_write_pos + write_size)].copy_from_slice(&buf[next_read_pos..(next_read_pos + write_size)]);
 
-            remaining -= write_size;
+            yet_to_write -= write_size;
             self.next_write_pos += write_size;
             next_read_pos += write_size;
         }
