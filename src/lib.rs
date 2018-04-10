@@ -143,7 +143,7 @@ impl<W: Write> Write for BufWriter<W> {
                 available_space = self.buf.len() - self.next_write_pos;
             }
 
-            let write_size = cmp::min(buf.len(), available_space);
+            let write_size = cmp::min(remaining, available_space);
             self.buf[self.next_write_pos..(self.next_write_pos + write_size)].copy_from_slice(&buf[next_read_pos..(next_read_pos + write_size)]);
 
             remaining -= write_size;
