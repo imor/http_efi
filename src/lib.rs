@@ -12,6 +12,7 @@ use efi::{
         Tcp4Stream,
         SocketAddrV4,
     },
+    string::ToString,
     io::{Read, Write}
 };
 
@@ -67,12 +68,21 @@ impl<'a> Client<'a> {
         self.io.write(" ".as_bytes())?;
         self.io.write("HTTP/1.1\r\n".as_bytes())?;
 
-        for header in headers {
-            self.io.write(header.name.as_bytes())?;
-            self.io.write(":".as_bytes())?;
-            self.io.write(header.value)?;
-            self.io.write("\r\n".as_bytes())?;
+        fn write_hdr(io: &mut BufWriter<Tcp4Stream>, name: &str, value: &[u8]) -> Result<()> {
+            io.write(name.as_bytes())?;
+            io.write(":".as_bytes())?;
+            io.write(value)?;
+            io.write("\r\n".as_bytes())?;
+            Ok(())
         }
+
+        for header in headers {
+            write_hdr(&mut self.io, header.name, header.value)?;
+        }
+
+        write_hdr(&mut self.io, "Content-Length", body.unwrap_or(&[]).len().to_string().as_bytes())?; // TODO: Don't do this if Content-Length is already present in incoming headers argument
+
+        self.io.write("\r\n".as_bytes())?;
 
         // TODO: Should we add/honour Connection: (keep-alive|close) headers. Otherwise we may see dropped connections especially by proxies
         if let Some(body) = body {
